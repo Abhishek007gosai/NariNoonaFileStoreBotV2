@@ -86,11 +86,33 @@ async def bot_hibernation_task(main_bot, worker_engine):
             log.error(f"Hibernation task error: {e}")
 
 
+async def web_server():
+    """Dummy web server to satisfy Render and Koyeb health checks."""
+    try:
+        from aiohttp import web
+        from config import PORT
+        
+        async def handle(request):
+            return web.Response(text="Bot is running!")
+            
+        app = web.Application()
+        app.router.add_get('/', handle)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', PORT)
+        await site.start()
+        log.info(f"Web server started on port {PORT} for health checks.")
+    except Exception as e:
+        log.error(f"Failed to start web server: {e}")
+
 async def main():
     """Main async entry point."""
     log.info("=" * 50)
     log.info("Multi-User FileStore Bot System")
     log.info("=" * 50)
+
+    # Start the web server for Render/Koyeb health checks
+    asyncio.create_task(web_server())
 
     # Validate configuration
     validate_config()
